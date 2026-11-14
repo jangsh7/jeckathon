@@ -2,11 +2,11 @@
 import { Component, useEffect } from 'react';
 import TopBar from './TopBar.jsx';
 
-const VIEW_TITLES = { home: '전광판', out: '외출 중', rec: '복귀 기록', res: '결과 카드', box: '박스 스코어' };
+const VIEW_TITLES = { intro: '시작', home: '전광판', out: '외출 중', hold: '참는 중', rec: '복귀 기록', res: '결과 카드', box: '박스 스코어' };
 
-// 처음으로: 전광판·오늘 기록은 두고 진행 중이던 외출/복귀 대기만 비운 뒤 S1로
+// 처음으로: 전광판·오늘 기록은 두고 진행 중이던 외출/참는 중/복귀 대기만 비운 뒤 S1로
 export function toHome(state) {
-  return { ...state, view: 'home', outing: null, pending: null };
+  return { ...state, view: 'home', outing: null, holding: null, pending: null };
 }
 
 export default function ErrorScreen({ view, onHome }) {

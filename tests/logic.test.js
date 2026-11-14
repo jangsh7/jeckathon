@@ -98,7 +98,7 @@ test('누적 지표', () => {
 
 test('URL 인코딩 왕복', () => {
   const state = {
-    board: cases[1][1], urgency: 2, view: 'res', outing: null, pending: null,
+    board: cases[1][1], urgency: 2, view: 'res', outing: null, holding: null, pending: null,
     todayLog: [L.buildEntry({ at: 1731561600000, board: cases[3][1], urgency: 2, action: 'went', durationSec: 184, event: 'big', eventByDice: true })],
   };
   const enc = L.encodeState(state);
@@ -128,6 +128,47 @@ test('기록 30건도 URL 2000자 이내', () => {
   const e = L.buildEntry({ at: 1731561600000, board: cases[3][1], urgency: 2, action: 'went', durationSec: 1234, event: 'big', eventByDice: true });
   const enc = L.encodeState({ board: L.defaultBoard(), urgency: 1, view: 'box', outing: null, pending: null, todayLog: Array(30).fill(e) });
   assert.ok(enc.length < 2000, `length ${enc.length}`);
+});
+
+// 정책서 4-3-1 분기 검증 케이스 C1~C9
+const R1 = [true, false, false];
+const cheerCases = [
+  ['C1', board(8, 7, 1, 0, 0, 2, NONE), 1, 'out2'],
+  ['C2', board(8, 4, 3, 0, 0, 1, FULL), 1, 'high'],
+  ['C3', board(4, 0, 0, 1, 2, 0, R1), 2, 'limit'],
+  ['C4', board(7, 3, 2, 1, 1, 1, [false, true, false]), 1, 'base'],
+  ['C5', board(9, 2, 2, 3, 2, 2, FULL), 1, 'out2'],
+  ['C6', board(1, 8, 0, 0, 0, 2, NONE), 2, 'out2'],
+  ['C7', board(9, 2, 2, 3, 2, 0, FULL), 2, 'high'],
+  ['C8', board(4, 0, 0, 1, 2, 0, R1), 0, 'base'],
+  ['C9', board(4, 0, 0, 3, 2, 1, R1), 0, 'high'],
+];
+for (const [id, b, u, branch] of cheerCases) {
+  test(`${id} 응원 분기 ${branch}`, () => assert.equal(L.cheerBranch(b, u), branch));
+}
+
+test('응원 문구: 고정 난수 0 / 0.5 / 0.99 → 첫째·가운데·마지막, 대표 문구 포함', () => {
+  const b = cheerCases[3][1];
+  const pool = L.CHEER_POOL.base;
+  assert.equal(L.cheerText(b, 1, L.pickCheerIndex(b, 1, () => 0)), pool[0]);
+  assert.equal(L.cheerText(b, 1, L.pickCheerIndex(b, 1, () => 0.5)), pool[1]);
+  assert.equal(L.cheerText(b, 1, L.pickCheerIndex(b, 1, () => 0.99)), pool[2]);
+  assert.equal(L.CHEER_POOL.out2[0], '곧 공수교대입니다');
+  assert.equal(L.CHEER_POOL.high[0], '지금 나가면 평생 후회합니다');
+  assert.equal(L.CHEER_POOL.limit[0], '정 급하면 다녀오세요');
+  assert.equal(pool[0], '이번 이닝까지 한 번 참아보시죠');
+});
+
+test('상황 리마인드 표기', () => {
+  assert.equal(L.reminderText(board(7, 0, 0, 0, 0, 1, NONE)), '현재 7회 1아웃 · 3아웃까지 2개');
+  assert.equal(L.reminderText(board(9, 0, 0, 0, 0, 2, NONE)), '현재 9회 2아웃 · 3아웃까지 1개');
+  assert.equal(L.reminderText(board(10, 0, 0, 0, 0, 0, NONE)), '현재 연장 0아웃 · 3아웃까지 3개');
+});
+
+test('참는 중 상태 왕복', () => {
+  const s = { board: L.defaultBoard(), urgency: 1, view: 'hold', outing: null, holding: { startedAt: 1731561600000, cheerIdx: 2 }, pending: null, todayLog: [] };
+  assert.deepEqual(L.decodeState(L.encodeState(s)), s);
+  assert.equal(L.decodeState(L.encodeState({ ...s, holding: null })).view, 'home');
 });
 
 console.log(`\n${passed} passed`);

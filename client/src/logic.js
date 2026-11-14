@@ -149,6 +149,37 @@ function stats(log) {
 
 function cloneBoard(b) { return { ...b, runners: [...b.runners] }; }
 
+// ---------- S2-B 참기 응원 문구 (정책서 POL-CHEER) ----------
+// 판정과 독립된 문구 규칙. 첫 일치 분기 하나에서 풀의 문구 1개를 고른다. 첫 번째가 확정 대표 문구.
+const CHEER_POOL = {
+  out2: ['곧 공수교대입니다', '아웃카운트 하나만 더 버티시죠', '3아웃이면 바로 출발입니다'],
+  high: ['지금 나가면 평생 후회합니다', '이 승부는 눈앞에서 보셔야 합니다', '야구신이 지금은 안 된다고 합니다'],
+  limit: ['정 급하면 다녀오세요', '참는 것도 용기, 다녀오는 것도 용기입니다', '야구신도 생리현상은 막지 못합니다'],
+  base: ['이번 이닝까지 한 번 참아보시죠', '한 타자만 더 보고 결정하시죠', '아직은 참을 만한 상황입니다'],
+};
+
+function cheerBranch(b, urgency) {
+  if (b.outs === 2) return 'out2';                       // 1순위
+  if (judge(b, urgency).score >= 60) return 'high';      // 2순위: 긴장도 점수 기준(판정 아님)
+  if (urgency === 2) return 'limit';                     // 3순위
+  return 'base';                                         // 4순위
+}
+
+// S2-B 진입 시 1회만 호출. 반환값(인덱스)을 상태에 저장해 화면이 유지되는 동안 문구를 고정한다.
+function pickCheerIndex(b, urgency, rng = Math.random) {
+  return Math.floor(rng() * CHEER_POOL[cheerBranch(b, urgency)].length);
+}
+
+function cheerText(b, urgency, index) {
+  const pool = CHEER_POOL[cheerBranch(b, urgency)];
+  return pool[Math.min(Math.max(index, 0), pool.length - 1)];
+}
+
+// 상황 리마인드 (정책서 POL-REM): S1 입력값을 그대로 표기
+function reminderText(b) {
+  return `현재 ${inningLabel(b.inning)} ${b.outs}아웃 · 3아웃까지 ${3 - b.outs}개`;
+}
+
 // ---------- URL 인코딩 ----------
 // 판정·칭호·적중은 입력에서 결정적으로 다시 계산되므로 원본 입력만 담는다.
 function boardToArr(b) {
@@ -185,7 +216,8 @@ function fromBase64Url(s) {
   return atob(s);
 }
 
-const VIEWS = ['home', 'out', 'rec', 'res', 'box'];
+// 인덱스가 URL에 들어가므로 새 화면은 뒤에 추가한다
+const VIEWS = ['home', 'out', 'rec', 'res', 'box', 'intro', 'hold'];
 
 function encodeState(s) {
   const obj = {
@@ -199,6 +231,7 @@ function encodeState(s) {
     ]),
   };
   if (s.outing) obj.o = Math.round(s.outing.startedAt / 1000);
+  if (s.holding) obj.h = [Math.round(s.holding.startedAt / 1000), s.holding.cheerIdx];
   if (s.pending) obj.p = [s.pending.action === 'went' ? 1 : 0, s.pending.durationSec];
   return toBase64Url(JSON.stringify(obj));
 }
@@ -226,17 +259,23 @@ function decodeState(str) {
     ? { action: obj.p[0] === 1 ? 'went' : 'held', durationSec: int(obj.p[1], 0, 86400, 0) }
     : null;
 
+  const holding = Array.isArray(obj.h) && Number.isInteger(obj.h[0]) && obj.h[0] > 0
+    ? { startedAt: obj.h[0] * 1000, cheerIdx: int(obj.h[1], 0, 2, 0) }
+    : null;
+
   let view = VIEWS[int(obj.v, 0, VIEWS.length - 1, 0)];
   if (view === 'out' && !outing) view = 'home';
+  if (view === 'hold' && !holding) view = 'home';
   if (view === 'rec' && !pending) view = 'home';
   if (view === 'res' && !todayLog.length) view = 'home';
 
-  return { board: arrToBoard(obj.b), urgency: int(obj.u, 0, 2, 1), view, outing, pending, todayLog };
+  return { board: arrToBoard(obj.b), urgency: int(obj.u, 0, 2, 1), view, outing, holding, pending, todayLog };
 }
 
 export {
   VERDICTS, URGENCY, EVENT_KEYS, EVENT_LABELS, LIMITS, VIEWS,
   defaultBoard, cloneBoard, diffOf, inningLabel, runnersLabel, boardSummary,
   clauses, judge, rollDice, titleOf, hitOf, buildEntry, stats,
+  CHEER_POOL, cheerBranch, pickCheerIndex, cheerText, reminderText,
   encodeState, decodeState,
 };
