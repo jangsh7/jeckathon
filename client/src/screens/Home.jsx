@@ -40,9 +40,11 @@ function ScoreGroup({ name, value, onMinus, onPlus }) {
   return (
     <div className="s1-score">
       <span className="s1-team">{name}</span>
-      <Step label={`${name} 점수 ${value}, 빼기`} disabled={value <= 0} onTap={onMinus}>−</Step>
-      <span className="s1-num">{value}</span>
-      <Step label={`${name} 점수 ${value}, 더하기`} disabled={value >= L.LIMITS.score} onTap={onPlus}>+</Step>
+      <div className="s1-score-ctl">
+        <Step className="score" label={`${name} 점수 ${value}, 빼기`} disabled={value <= 0} onTap={onMinus}>−</Step>
+        <span className="s1-num">{value}</span>
+        <Step className="score" label={`${name} 점수 ${value}, 더하기`} disabled={value >= L.LIMITS.score} onTap={onPlus}>+</Step>
+      </div>
     </div>
   );
 }

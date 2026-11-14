@@ -118,10 +118,23 @@ body[data-view="home"] { background: #fff; color-scheme: light; }
   background: var(--card); border: 1px solid #ececec; border-radius: 16px;
   padding: 14px 12px 14px 14px;
 }
-.s1-scores { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; }
-.s1-score { display: flex; align-items: center; gap: 8px; }
-.s1-team { font-weight: 700; font-size: 16px; margin-right: 2px; }
-.s1-num { min-width: 22px; text-align: center; font-size: 18px; font-variant-numeric: tabular-nums; }
+.s1-scores { display: flex; justify-content: center; gap: 16px; }
+.s1-score { display: flex; align-items: center; gap: 6px; }
+.s1-score-ctl { display: flex; align-items: center; gap: 4px; }
+.s1-team { font-weight: 800; font-size: 17px; }
+.s1-num { min-width: 26px; text-align: center; font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* 점수 −/+ : 보이는 크기 36px, 탭 영역 46px */
+.s1-step.score { width: 36px; height: 36px; }
+.s1-step.score::after { inset: -5px; }
+.s1-step.score span { width: 36px; height: 36px; border-radius: 8px; font-size: 22px; background: #e3e3e3; }
+
+/* 좁은 폰: 팀 이름을 버튼 위로 */
+@media (max-width: 389px) {
+  .s1-scores { justify-content: space-around; gap: 8px; }
+  .s1-score { flex-direction: column; gap: 2px; }
+  .s1-team { font-size: 15px; }
+}
 
 .s1-board-bottom { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 10px; }
 .s1-bso { display: flex; flex-direction: column; flex-shrink: 0; }
