@@ -98,8 +98,16 @@ export default function Home({ state, dispatch }) {
   return (
     <section className={`screen s1 v-${level}`}>
       <header className="s1-bar">
+        {/* TODO: 뒤로 가기 이동 경로는 추후 확정되면 연결 */}
+        <button className="s1-back" onClick={() => {}} aria-label="뒤로 가기">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+            <path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
         <h1>전광판 홈</h1>
-        <button className="s1-random" onClick={() => dispatch({ type: 'random', board: randomBoard() })} aria-label="랜덤 상황">🎲</button>
+        <button className="s1-random" onClick={() => dispatch({ type: 'random', board: randomBoard() })}>
+          <span aria-hidden="true">🎲</span>랜덤 상황
+        </button>
       </header>
 
       <div className="s1-inning">
