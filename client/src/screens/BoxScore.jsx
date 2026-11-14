@@ -41,7 +41,7 @@ export default function BoxScore({ state, dispatch }) {
         {/* POL-S5-03 */}
         <p className="res-save">오늘의 기록은 스크린샷으로만 남습니다</p>
         {/* POL-S5-04: 메모리 초기화 후 S1 */}
-        <button className="box5-new" onClick={() => dispatch({ type: 'newgame' })}>새 경기 시작</button>
+        <button className="btn-accent" onClick={() => dispatch({ type: 'newgame' })}>새 경기 시작</button>
       </div>
     </section>
   );

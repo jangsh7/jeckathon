@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import * as L from '../logic.js';
 import TopBar from '../components/TopBar.jsx';
 import { backFromRecord } from './TopBar.jsx';
+import ErrorScreen, { toHome } from './ErrorScreen.jsx';
 
 // tone: 선택 시 강조 색 (아무 일 없음=검정, 소형=초록, 중형=갈색, 대형=빨강, 🎲=보라)
 const OPTIONS = [
@@ -18,7 +19,7 @@ export default function Record({ state, dispatch }) {
   const locked = useRef(false);
 
   const pending = state.pending;
-  if (!pending) return null;
+  if (!pending) return <ErrorScreen view={state.view} onHome={() => dispatch({ type: 'load', state: toHome(state) })} />;
   const went = pending.action === 'went';
   const tone = OPTIONS.find((o) => o.key === picked)?.tone;
 
