@@ -185,7 +185,8 @@ function fromBase64Url(s) {
   return atob(s);
 }
 
-const VIEWS = ['home', 'out', 'rec', 'res', 'box'];
+// 인덱스가 URL에 들어가므로 새 화면은 뒤에 추가한다
+const VIEWS = ['home', 'out', 'rec', 'res', 'box', 'intro'];
 
 function encodeState(s) {
   const obj = {

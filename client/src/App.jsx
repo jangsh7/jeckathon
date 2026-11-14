@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useUrlState } from './state.js';
+import Intro from './screens/Intro.jsx';
 import Home from './screens/Home.jsx';
 import Outing from './screens/Outing.jsx';
 import Record from './screens/Record.jsx';
@@ -30,11 +31,11 @@ export default function App() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    document.body.dataset.view = state.view; // S1만 밝은 테마
+    document.body.dataset.view = state.view; // 시작 화면·S1은 밝은 테마
   }, [state.view]);
 
   const props = { state, dispatch, copyLink };
-  const Screen = { home: Home, out: Outing, rec: Record, res: Result, box: BoxScore }[state.view];
+  const Screen = { intro: Intro, home: Home, out: Outing, rec: Record, res: Result, box: BoxScore }[state.view];
 
   return (
     <main className="app">

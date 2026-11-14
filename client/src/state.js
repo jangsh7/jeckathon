@@ -3,7 +3,7 @@ import { useEffect, useReducer } from 'react';
 import * as L from './logic.js';
 
 export function initialState() {
-  return { board: L.defaultBoard(), urgency: 1, view: 'home', outing: null, pending: null, todayLog: [] };
+  return { board: L.defaultBoard(), urgency: 1, view: 'intro', outing: null, pending: null, todayLog: [] };
 }
 
 function readHash() {
@@ -20,6 +20,8 @@ export function reducer(state, a) {
 
   switch (a.type) {
     case 'load': return a.state;
+    case 'start': return { ...state, view: 'home' };   // 시작 화면 → 전광판 홈
+    case 'intro': return { ...state, view: 'intro' };  // 전광판 홈 뒤로 가기 → 시작 화면
     case 'score': return setBoard({ [a.team]: clamp(b[a.team] + a.delta, 0, L.LIMITS.score) });
     case 'inning': return setBoard({ inning: clamp(b.inning + a.delta, 1, L.LIMITS.inning) });
     case 'count': return setBoard({ [a.key]: clamp(a.value, 0, L.LIMITS[a.key]) });
