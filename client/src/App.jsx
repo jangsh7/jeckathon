@@ -5,6 +5,7 @@ import Outing from './screens/Outing.jsx';
 import Record from './screens/Record.jsx';
 import Result from './screens/Result.jsx';
 import BoxScore from './screens/BoxScore.jsx';
+import ErrorScreen, { ErrorBoundary, toHome } from './screens/ErrorScreen.jsx';
 
 export default function App() {
   const [state, dispatch] = useUrlState();
@@ -35,10 +36,13 @@ export default function App() {
 
   const props = { state, dispatch, copyLink };
   const Screen = { home: Home, out: Outing, rec: Record, res: Result, box: BoxScore }[state.view];
+  const goHome = () => dispatch({ type: 'load', state: toHome(state) });
 
   return (
     <main className="app">
-      <Screen {...props} />
+      <ErrorBoundary view={state.view} onHome={goHome}>
+        {Screen ? <Screen {...props} /> : <ErrorScreen view={state.view} onHome={goHome} />}
+      </ErrorBoundary>
       <div className={`toast${toast ? ' show' : ''}`} role="status" aria-live="polite">{toast}</div>
     </main>
   );
