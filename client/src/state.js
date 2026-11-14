@@ -3,7 +3,7 @@ import { useEffect, useReducer } from 'react';
 import * as L from './logic.js';
 
 export function initialState() {
-  return { board: L.defaultBoard(), urgency: 1, view: 'intro', outing: null, pending: null, todayLog: [] };
+  return { board: L.defaultBoard(), urgency: 1, view: 'intro', outing: null, holding: null, pending: null, todayLog: [] };
 }
 
 function readHash() {
@@ -29,8 +29,18 @@ export function reducer(state, a) {
     case 'urgency': return { ...state, urgency: a.value };
     case 'random': return { ...state, board: a.board };
 
-    case 'go': return { ...state, outing: { startedAt: a.now }, view: 'out' };
-    case 'hold': return { ...state, pending: { action: 'held', durationSec: 0 }, view: 'rec' };
+    case 'go':
+      if (state.outing) return state;                                  // 중복 탭 방어
+      return { ...state, outing: { startedAt: a.now }, view: 'out' };
+    case 'hold':                                                       // S1 참는다 → S2-B 참는 중
+      if (state.holding) return state;
+      return { ...state, holding: { startedAt: a.now, cheerIdx: a.cheerIdx }, view: 'hold' };
+    case 'held':                                                       // S2-B 다 참았다 → S3
+      if (!state.holding) return state;
+      return { ...state, holding: null, pending: { action: 'held', durationSec: 0 }, view: 'rec' };
+    case 'escape':                                                     // S2-B 결국 다녀온다 → S2-A (타이머 새로 시작)
+      if (!state.holding) return state;
+      return { ...state, holding: null, outing: { startedAt: a.now }, view: 'out' };
     case 'back': {
       if (!state.outing) return state;
       const sec = Math.max(0, Math.floor((a.now - state.outing.startedAt) / 1000));
@@ -52,7 +62,7 @@ export function reducer(state, a) {
     case 'again': return { ...state, urgency: 1, view: 'home' }; // 전광판 유지, 급한 정도만 초기화
     case 'close': return { ...state, view: 'box' };
     case 'resume': return { ...state, view: state.todayLog.length ? 'res' : 'home' };
-    case 'newgame': return initialState();
+    case 'newgame': return { ...initialState(), view: 'home' };
     default: return state;
   }
 }

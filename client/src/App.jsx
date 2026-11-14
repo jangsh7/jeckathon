@@ -3,6 +3,7 @@ import { useUrlState } from './state.js';
 import Intro from './screens/Intro.jsx';
 import Home from './screens/Home.jsx';
 import Outing from './screens/Outing.jsx';
+import Holding from './screens/Holding.jsx';
 import Record from './screens/Record.jsx';
 import Result from './screens/Result.jsx';
 import BoxScore from './screens/BoxScore.jsx';
@@ -35,7 +36,7 @@ export default function App() {
   }, [state.view]);
 
   const props = { state, dispatch, copyLink };
-  const Screen = { intro: Intro, home: Home, out: Outing, rec: Record, res: Result, box: BoxScore }[state.view];
+  const Screen = { intro: Intro, home: Home, out: Outing, hold: Holding, rec: Record, res: Result, box: BoxScore }[state.view];
 
   return (
     <main className="app">

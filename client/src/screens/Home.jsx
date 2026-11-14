@@ -176,7 +176,9 @@ export default function Home({ state, dispatch }) {
 
       <div className="s1-actions">
         <button className="s1-go" onClick={() => dispatch({ type: 'go', now: Date.now() })}>다녀온다</button>
-        <button className="s1-hold" onClick={() => dispatch({ type: 'hold' })}>참는다</button>
+        <button className="s1-hold" onClick={() => dispatch({
+          type: 'hold', now: Date.now(), cheerIdx: L.pickCheerIndex(b, state.urgency),
+        })}>참는다</button>
       </div>
       <p className="s1-disclaimer">이 신탁은 근거가 없습니다</p>
     </section>
