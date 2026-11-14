@@ -28,7 +28,10 @@ export default function App() {
     }
   }, [showToast]);
 
-  useEffect(() => { window.scrollTo(0, 0); }, [state.view]);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.body.dataset.view = state.view; // S1만 밝은 테마
+  }, [state.view]);
 
   const props = { state, dispatch, copyLink };
   const Screen = { home: Home, out: Outing, rec: Record, res: Result, box: BoxScore }[state.view];
