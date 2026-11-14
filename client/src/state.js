@@ -12,7 +12,6 @@ function readHash() {
 }
 
 const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
-const cycle = (v, max) => (v >= max ? 0 : v + 1);
 
 // 리듀서는 순수해야 하므로(StrictMode 이중 호출) 시간·난수는 action에 담아 넘긴다.
 export function reducer(state, a) {
@@ -23,7 +22,7 @@ export function reducer(state, a) {
     case 'load': return a.state;
     case 'score': return setBoard({ [a.team]: clamp(b[a.team] + a.delta, 0, L.LIMITS.score) });
     case 'inning': return setBoard({ inning: clamp(b.inning + a.delta, 1, L.LIMITS.inning) });
-    case 'count': return setBoard({ [a.key]: cycle(b[a.key], L.LIMITS[a.key]) });
+    case 'count': return setBoard({ [a.key]: clamp(a.value, 0, L.LIMITS[a.key]) });
     case 'base': return setBoard({ runners: b.runners.map((on, i) => (i === a.index ? !on : on)) });
     case 'urgency': return { ...state, urgency: a.value };
     case 'random': return { ...state, board: a.board };

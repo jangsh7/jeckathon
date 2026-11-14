@@ -1,81 +1,146 @@
+import { useEffect, useRef } from 'react';
 import * as L from '../logic.js';
 import { randomBoard } from '../state.js';
 import { LEVEL_CLASS } from '../format.js';
 
-function Lamps({ label, count, max, kind, onTap }) {
+const LAMP_NAME = { B: '볼', S: '스트라이크', O: '아웃' };
+
+// N번째 원을 누르면 N개. 마지막으로 켜진 원을 다시 누르면 하나 줄어든다(첫 원이면 0).
+function Lamps({ label, count, max, kind, onSet }) {
+  const name = LAMP_NAME[label];
   return (
-    <button className={`lamps ${kind}`} onClick={onTap} aria-label={`${label} ${count}`}>
-      <span className="lbl">{label}</span>
-      {Array.from({ length: max }, (_, i) => <i key={i} className={i < count ? 'on' : ''} />)}
+    <div className="s1-lamp-row" role="group" aria-label={`${name} ${count}`}>
+      <span className="s1-lamp-lbl" aria-hidden="true">{label}</span>
+      {Array.from({ length: max }, (_, i) => {
+        const n = i + 1;
+        const target = count === n ? n - 1 : n;
+        return (
+          <button
+            key={i}
+            className={`s1-lamp ${kind}${i < count ? ' on' : ''}`}
+            aria-label={`${name} ${count}, 탭하면 ${target}`}
+            onClick={() => onSet(target)}
+          ><i /></button>
+        );
+      })}
+    </div>
+  );
+}
+
+// 보이는 버튼은 작게, 탭 영역은 ::after 로 44px 확보
+function Step({ children, label, disabled, onTap, className = '' }) {
+  return (
+    <button className={`s1-step ${className}`} onClick={onTap} aria-label={label} disabled={disabled}>
+      <span aria-hidden="true">{children}</span>
     </button>
   );
 }
 
-function Step({ children, label, onTap }) {
-  return <button className="step" onClick={onTap} aria-label={label}>{children}</button>;
-}
-
-function Scoreboard({ board: b, dispatch }) {
-  const team = (key, name) => (
-    <div className="team-row">
-      <span className="team">{name}</span>
-      <Step label={`${name} 점수 빼기`} onTap={() => dispatch({ type: 'score', team: key, delta: -1 })}>−</Step>
-      <span className="led">{b[key]}</span>
-      <Step label={`${name} 점수 더하기`} onTap={() => dispatch({ type: 'score', team: key, delta: 1 })}>+</Step>
+function ScoreGroup({ name, value, onMinus, onPlus }) {
+  return (
+    <div className="s1-score">
+      <span className="s1-team">{name}</span>
+      <div className="s1-score-ctl">
+        <Step className="score" label={`${name} 점수 ${value}, 빼기`} disabled={value <= 0} onTap={onMinus}>−</Step>
+        <span className="s1-num">{value}</span>
+        <Step className="score" label={`${name} 점수 ${value}, 더하기`} disabled={value >= L.LIMITS.score} onTap={onPlus}>+</Step>
+      </div>
     </div>
   );
-  const base = (n) => (
-    <button
-      className={`base b${n}${b.runners[n - 1] ? ' on' : ''}`}
-      aria-label={`${n}루`}
-      aria-pressed={b.runners[n - 1]}
-      onClick={() => dispatch({ type: 'base', index: n - 1 })}
-    />
-  );
+}
 
+// 야구장 그림(장식) + 1·2·3루 탭 버튼. 좌표는 viewBox(200×160) 기준.
+// 베이스 탭 영역(48px)이 서로 겹치지 않도록 베이스를 바깥쪽에 둔다
+const BASES = [
+  { n: 1, x: 162, y: 84 },
+  { n: 2, x: 100, y: 26 },
+  { n: 3, x: 38, y: 84 },
+];
+
+function Field({ runners, onToggle }) {
   return (
-    <div className="board" aria-label="전광판">
-      <div className="board-top">
-        <div className="scores">
-          {team('away', 'AWAY')}
-          {team('home', 'HOME')}
-        </div>
-        <div className="inning">
-          <Step label="이전 이닝" onTap={() => dispatch({ type: 'inning', delta: -1 })}>◀</Step>
-          <span className="led led-inning">{L.inningLabel(b.inning)}</span>
-          <Step label="다음 이닝" onTap={() => dispatch({ type: 'inning', delta: 1 })}>▶</Step>
-        </div>
-      </div>
-      <div className="board-bottom">
-        <div className="bso">
-          <Lamps label="B" kind="ball" count={b.balls} max={3} onTap={() => dispatch({ type: 'count', key: 'balls' })} />
-          <Lamps label="S" kind="strike" count={b.strikes} max={2} onTap={() => dispatch({ type: 'count', key: 'strikes' })} />
-          <Lamps label="O" kind="out" count={b.outs} max={2} onTap={() => dispatch({ type: 'count', key: 'outs' })} />
-        </div>
-        <div className="diamond" aria-label="주자">
-          {base(2)}{base(3)}{base(1)}
-          <span className="plate" />
-        </div>
-      </div>
+    <div className="s1-field">
+      <svg viewBox="0 0 200 160" aria-hidden="true">
+        <rect width="200" height="160" fill="#6aa84f" />
+        <line x1="100" y1="142" x2="0" y2="42" stroke="#cfe3c2" strokeWidth="1.2" />
+        <line x1="100" y1="142" x2="200" y2="42" stroke="#cfe3c2" strokeWidth="1.2" />
+        <path d="M22 84 A78 78 0 0 1 178 84 L100 158 Z" fill="#e3a46f" />
+        <polygon points="100,42 146,86 100,128 54,86" fill="#6aa84f" />
+        <polygon points="100,26 162,84 100,142 38,84" fill="none" stroke="#f6efe6" strokeWidth="1.5" />
+        <circle cx="100" cy="86" r="8" fill="#e3a46f" />
+        <path d="M93 138 L107 138 L107 143 L100 149 L93 143 Z" fill="#fff" />
+      </svg>
+      {BASES.map(({ n, x, y }) => (
+        <button
+          key={n}
+          className={`s1-base${runners[n - 1] ? ' on' : ''}`}
+          style={{ left: `${(x / 200) * 100}%`, top: `${(y / 160) * 100}%` }}
+          aria-label={`${n}루 주자 ${runners[n - 1] ? '있음' : '없음'}`}
+          aria-pressed={runners[n - 1]}
+          onClick={() => onToggle(n - 1)}
+        ><i /></button>
+      ))}
     </div>
   );
 }
 
 export default function Home({ state, dispatch }) {
-  const j = L.judge(state.board, state.urgency);
+  const b = state.board;
+  const j = L.judge(b, state.urgency);
+  const level = LEVEL_CLASS[j.level];
+  const inning = L.inningLabel(b.inning);
+
+  // 도장 애니메이션은 판정 단계가 바뀔 때만. 첫 진입·S4 복귀(마운트) 때는 없음.
+  const prevLevel = useRef(null);
+  const thump = prevLevel.current !== null && prevLevel.current !== j.level;
+  useEffect(() => { prevLevel.current = j.level; }, [j.level]);
 
   return (
-    <section className="screen">
-      <header className="brand">
-        <h1>화장실 허가증</h1>
-        <button className="ghost small" onClick={() => dispatch({ type: 'random', board: randomBoard() })}>🎲 랜덤 상황</button>
+    <section className={`screen s1 v-${level}`}>
+      <header className="s1-bar">
+        {/* TODO: 뒤로 가기 이동 경로는 추후 확정되면 연결 */}
+        <button className="s1-back" onClick={() => {}} aria-label="뒤로 가기">
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+            <path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <h1>전광판 홈</h1>
+        <button className="s1-random" onClick={() => dispatch({ type: 'random', board: randomBoard() })}>
+          <span aria-hidden="true">🎲</span>랜덤 상황
+        </button>
       </header>
 
-      <Scoreboard board={state.board} dispatch={dispatch} />
+      <div className="s1-inning">
+        <Step className="tri" label={`${inning}, 이전 이닝`} disabled={b.inning <= 1}
+          onTap={() => dispatch({ type: 'inning', delta: -1 })}>◀</Step>
+        <strong>{inning}</strong>
+        <Step className="tri" label={`${inning}, 다음 이닝`} disabled={b.inning >= L.LIMITS.inning}
+          onTap={() => dispatch({ type: 'inning', delta: 1 })}>▶</Step>
+      </div>
+      <p className="s1-hint">전광판 각 요소를 선택해주세요</p>
 
-      <div className="urgency">
-        <span className="urgency-label">급한 정도</span>
-        <div className="seg">
+      <div className="s1-board">
+        <div className="s1-scores">
+          <ScoreGroup name="AWAY" value={b.away}
+            onMinus={() => dispatch({ type: 'score', team: 'away', delta: -1 })}
+            onPlus={() => dispatch({ type: 'score', team: 'away', delta: 1 })} />
+          <ScoreGroup name="HOME" value={b.home}
+            onMinus={() => dispatch({ type: 'score', team: 'home', delta: -1 })}
+            onPlus={() => dispatch({ type: 'score', team: 'home', delta: 1 })} />
+        </div>
+        <div className="s1-board-bottom">
+          <div className="s1-bso">
+            <Lamps label="B" kind="ball" count={b.balls} max={3} onSet={(v) => dispatch({ type: 'count', key: 'balls', value: v })} />
+            <Lamps label="S" kind="strike" count={b.strikes} max={2} onSet={(v) => dispatch({ type: 'count', key: 'strikes', value: v })} />
+            <Lamps label="O" kind="out" count={b.outs} max={2} onSet={(v) => dispatch({ type: 'count', key: 'outs', value: v })} />
+          </div>
+          <Field runners={b.runners} onToggle={(i) => dispatch({ type: 'base', index: i })} />
+        </div>
+      </div>
+
+      <div className="s1-urgency">
+        <h2>급한 정도</h2>
+        <div className="s1-tabs">
           {L.URGENCY.map((name, u) => (
             <button
               key={name}
@@ -87,34 +152,34 @@ export default function Home({ state, dispatch }) {
         </div>
       </div>
 
-      <div className="permit">
-        <div className="permit-head">허가증 · 실시간</div>
-        <div className="permit-main">
-          {/* key가 바뀌면 다시 마운트되어 판정 단계가 바뀔 때만 도장이 찍힌다 */}
-          <div key={j.level} className={`stamp ${LEVEL_CLASS[j.level]}`}>{j.verdict}</div>
-          <div className="tension">긴장도 <b>{j.score}</b></div>
+      <div className="s1-permit">
+        <div className="s1-permit-head">허가증 · 실시간</div>
+        <div className="s1-permit-main" aria-live="polite">
+          <div key={j.level} className={`s1-stamp${thump ? ' thump' : ''}`}>{j.verdict}</div>
+          <div className="s1-tension"><span>긴장도</span><b>{j.score}</b></div>
         </div>
-        {j.condition && <p className="condition">조건: {j.condition}</p>}
-        <ol className="articles">
+        {j.condition && <p className="s1-condition"><b>조건</b>{j.condition}</p>}
+        <ul className="s1-articles" aria-label="긴장도 구성">
           {j.clauses.map((c) => (
             <li key={c.n}>
-              <span>제{c.n}조 {c.name} <em>{c.detail}</em></span>
-              <b>{c.pts > 0 ? '+' : ''}{c.pts}</b>
+              <span>제{c.n}조 {c.name}<em>{c.detail}</em></span>
+              <b>{c.pts < 0 ? `−${-c.pts}` : `+${c.pts}`}</b>
             </li>
           ))}
-        </ol>
+        </ul>
         {j.specials.length > 0 && (
-          <ul className="specials">
+          <ul className="s1-specials">
             {j.specials.map((s) => <li key={s.n}>특례 {s.n} · {s.name} → {s.effect}</li>)}
           </ul>
         )}
+        <p className="s1-note">※ 오른쪽 숫자는 긴장도 가산값이며 경기 점수가 아닙니다</p>
       </div>
 
-      <div className="actions">
-        <button className="primary" onClick={() => dispatch({ type: 'go', now: Date.now() })}>다녀온다</button>
-        <button className="secondary" onClick={() => dispatch({ type: 'hold' })}>참는다</button>
+      <div className="s1-actions">
+        <button className="s1-go" onClick={() => dispatch({ type: 'go', now: Date.now() })}>다녀온다</button>
+        <button className="s1-hold" onClick={() => dispatch({ type: 'hold' })}>참는다</button>
       </div>
-      <p className="disclaimer">이 신탁은 근거가 없습니다</p>
+      <p className="s1-disclaimer">이 신탁은 근거가 없습니다</p>
     </section>
   );
 }
