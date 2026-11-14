@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import * as L from '../logic.js';
+import TopBar from '../components/TopBar.jsx';
+import { backFromRecord } from './TopBar.jsx';
 
 // tone: 선택 시 강조 색 (아무 일 없음=검정, 소형=초록, 중형=갈색, 대형=빨강, 🎲=보라)
 const OPTIONS = [
@@ -11,32 +13,30 @@ const OPTIONS = [
 ];
 
 export default function Record({ state, dispatch }) {
-  const went = state.pending.action === 'went';
   const [picked, setPicked] = useState(null);
+  // POL-S3-05: 기록하기는 1회만 처리한다 (중복 기록 방지)
+  const locked = useRef(false);
+
+  const pending = state.pending;
+  if (!pending) return null;
+  const went = pending.action === 'went';
   const tone = OPTIONS.find((o) => o.key === picked)?.tone;
 
+  // POL-S3-06·POL-DICE-01: 행동 버튼 시점 스냅샷의 긴장도를 쓴다 (스냅샷이 없으면 현재 전광판으로 계산)
+  const score = pending.snapshot?.score ?? L.judge(state.board, state.urgency).score;
+
   const submit = () => {
-    if (!picked) return;
-    if (picked === 'dice') {
-      const score = L.judge(state.board, state.urgency).score;
-      dispatch({ type: 'record', event: L.rollDice(score), byDice: true, now: Date.now() });
-    } else {
-      dispatch({ type: 'record', event: picked, byDice: false, now: Date.now() });
-    }
+    if (!picked || locked.current) return;
+    locked.current = true;
+    const byDice = picked === 'dice';
+    const event = byDice ? L.rollDice(score) : picked; // 🎲는 기록하기를 누를 때 1회만 굴린다
+    dispatch({ type: 'record', event, byDice, now: Date.now() });
   };
 
   return (
     <section className="screen s3">
-      <header className="s1-bar">
-        {/* TODO: 뒤로 가기 이동 경로는 추후 확정되면 연결 (정책서 POL-NAV-02는 S3 뒤로 가기 없음) */}
-        <button className="s1-back" onClick={() => {}} aria-label="뒤로 가기">
-          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
-            <path d="M15 5 L8 12 L15 19" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-        <h1>복귀 기록</h1>
-        <span />
-      </header>
+      {/* 이전: 다녀옴이면 외출 중(타이머 이어서), 참음이면 전광판 홈 */}
+      <TopBar title="복귀 기록" onBack={() => dispatch({ type: 'load', state: backFromRecord(state) })} />
 
       <div className="s3-head">
         <h2>{went ? '자리 비운 사이 무슨 일이 있었나요?' : '참는 동안 무슨 일이 있었나요?'}</h2>
