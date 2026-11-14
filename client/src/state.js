@@ -68,7 +68,13 @@ export function reducer(state, a) {
 }
 
 export function useUrlState() {
-  const [state, dispatch] = useReducer(reducer, undefined, () => readHash() || initialState());
+  const [state, dispatch] = useReducer(reducer, undefined, () => {
+    const saved = readHash();
+    if (!saved) return initialState();
+    // 링크를 새로 열면 첫 화면은 시작 화면. 전광판·오늘 기록은 유지하고,
+    // 외출 중·참는 중·기록 중처럼 진행 중인 화면은 그대로 이어서 보여 준다.
+    return saved.view === 'home' ? { ...saved, view: 'intro' } : saved;
+  });
 
   useEffect(() => {
     const { pathname, search } = window.location;
