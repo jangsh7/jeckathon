@@ -1,58 +1,84 @@
+import { useEffect, useRef } from 'react';
 import * as L from '../logic.js';
 import { randomBoard } from '../state.js';
 import { LEVEL_CLASS } from '../format.js';
 
-function Lamps({ label, count, max, kind, onTap }) {
+const LAMP_NAME = { B: '볼', S: '스트라이크', O: '아웃' };
+
+// N번째 원을 누르면 N개. 마지막으로 켜진 원을 다시 누르면 하나 줄어든다(첫 원이면 0).
+function Lamps({ label, count, max, kind, onSet }) {
+  const name = LAMP_NAME[label];
   return (
-    <button className={`lamps ${kind}`} onClick={onTap} aria-label={`${label} ${count}`}>
-      <span className="lbl">{label}</span>
-      {Array.from({ length: max }, (_, i) => <i key={i} className={i < count ? 'on' : ''} />)}
-    </button>
+    <div className="lamp-row" role="group" aria-label={`${name} ${count}`}>
+      <span className="lbl" aria-hidden="true">{label}</span>
+      {Array.from({ length: max }, (_, i) => {
+        const n = i + 1;
+        const target = count === n ? n - 1 : n;
+        return (
+          <button
+            key={i}
+            className={`lamp ${kind}${i < count ? ' on' : ''}`}
+            aria-label={`${name} ${count}, 탭하면 ${target}`}
+            onClick={() => onSet(target)}
+          ><i /></button>
+        );
+      })}
+    </div>
   );
 }
 
-function Step({ children, label, onTap }) {
-  return <button className="step" onClick={onTap} aria-label={label}>{children}</button>;
+// 보이는 상자는 작게, 탭 영역은 44px
+function Step({ children, label, disabled, onTap }) {
+  return (
+    <button className="step" onClick={onTap} aria-label={label} disabled={disabled}>
+      <span aria-hidden="true">{children}</span>
+    </button>
+  );
 }
 
 function Scoreboard({ board: b, dispatch }) {
   const team = (key, name) => (
     <div className="team-row">
       <span className="team">{name}</span>
-      <Step label={`${name} 점수 빼기`} onTap={() => dispatch({ type: 'score', team: key, delta: -1 })}>−</Step>
+      <Step label={`${name} 점수 ${b[key]}, 빼기`} disabled={b[key] <= 0}
+        onTap={() => dispatch({ type: 'score', team: key, delta: -1 })}>−</Step>
       <span className="led">{b[key]}</span>
-      <Step label={`${name} 점수 더하기`} onTap={() => dispatch({ type: 'score', team: key, delta: 1 })}>+</Step>
+      <Step label={`${name} 점수 ${b[key]}, 더하기`} disabled={b[key] >= L.LIMITS.score}
+        onTap={() => dispatch({ type: 'score', team: key, delta: 1 })}>+</Step>
     </div>
   );
   const base = (n) => (
     <button
       className={`base b${n}${b.runners[n - 1] ? ' on' : ''}`}
-      aria-label={`${n}루`}
+      aria-label={`${n}루 주자 ${b.runners[n - 1] ? '있음' : '없음'}`}
       aria-pressed={b.runners[n - 1]}
       onClick={() => dispatch({ type: 'base', index: n - 1 })}
     />
   );
+  const inning = L.inningLabel(b.inning);
 
   return (
-    <div className="board" aria-label="전광판">
+    <div className="board">
       <div className="board-top">
         <div className="scores">
           {team('away', 'AWAY')}
           {team('home', 'HOME')}
         </div>
         <div className="inning">
-          <Step label="이전 이닝" onTap={() => dispatch({ type: 'inning', delta: -1 })}>◀</Step>
-          <span className="led led-inning">{L.inningLabel(b.inning)}</span>
-          <Step label="다음 이닝" onTap={() => dispatch({ type: 'inning', delta: 1 })}>▶</Step>
+          <Step label={`${inning}, 이전 이닝`} disabled={b.inning <= 1}
+            onTap={() => dispatch({ type: 'inning', delta: -1 })}>◀</Step>
+          <span className="led led-inning">{inning}</span>
+          <Step label={`${inning}, 다음 이닝`} disabled={b.inning >= L.LIMITS.inning}
+            onTap={() => dispatch({ type: 'inning', delta: 1 })}>▶</Step>
         </div>
       </div>
       <div className="board-bottom">
         <div className="bso">
-          <Lamps label="B" kind="ball" count={b.balls} max={3} onTap={() => dispatch({ type: 'count', key: 'balls' })} />
-          <Lamps label="S" kind="strike" count={b.strikes} max={2} onTap={() => dispatch({ type: 'count', key: 'strikes' })} />
-          <Lamps label="O" kind="out" count={b.outs} max={2} onTap={() => dispatch({ type: 'count', key: 'outs' })} />
+          <Lamps label="B" kind="ball" count={b.balls} max={3} onSet={(v) => dispatch({ type: 'count', key: 'balls', value: v })} />
+          <Lamps label="S" kind="strike" count={b.strikes} max={2} onSet={(v) => dispatch({ type: 'count', key: 'strikes', value: v })} />
+          <Lamps label="O" kind="out" count={b.outs} max={2} onSet={(v) => dispatch({ type: 'count', key: 'outs', value: v })} />
         </div>
-        <div className="diamond" aria-label="주자">
+        <div className="diamond" role="group" aria-label="주자">
           {base(2)}{base(3)}{base(1)}
           <span className="plate" />
         </div>
@@ -64,6 +90,11 @@ function Scoreboard({ board: b, dispatch }) {
 export default function Home({ state, dispatch }) {
   const j = L.judge(state.board, state.urgency);
 
+  // 도장 애니메이션은 판정 단계가 바뀔 때만. 첫 진입·S4 복귀(마운트) 때는 없음.
+  const prevLevel = useRef(null);
+  const thump = prevLevel.current !== null && prevLevel.current !== j.level;
+  useEffect(() => { prevLevel.current = j.level; }, [j.level]);
+
   return (
     <section className="screen">
       <header className="brand">
@@ -71,7 +102,10 @@ export default function Home({ state, dispatch }) {
         <button className="ghost small" onClick={() => dispatch({ type: 'random', board: randomBoard() })}>🎲 랜덤 상황</button>
       </header>
 
-      <Scoreboard board={state.board} dispatch={dispatch} />
+      <div className="board-wrap">
+        <p className="hint">전광판 (각 요소를 탭하여 입력)</p>
+        <Scoreboard board={state.board} dispatch={dispatch} />
+      </div>
 
       <div className="urgency">
         <span className="urgency-label">급한 정도</span>
@@ -88,33 +122,30 @@ export default function Home({ state, dispatch }) {
       </div>
 
       <div className="permit">
-        <div className="permit-head">허가증 · 실시간</div>
-        <div className="permit-main">
-          {/* key가 바뀌면 다시 마운트되어 판정 단계가 바뀔 때만 도장이 찍힌다 */}
-          <div key={j.level} className={`stamp ${LEVEL_CLASS[j.level]}`}>{j.verdict}</div>
+        <div className="permit-main" aria-live="polite">
+          <div key={j.level} className={`stamp ${LEVEL_CLASS[j.level]}${thump ? ' thump' : ''}`}>{j.verdict}</div>
           <div className="tension">긴장도 <b>{j.score}</b></div>
         </div>
-        {j.condition && <p className="condition">조건: {j.condition}</p>}
-        <ol className="articles">
+        <p className="articles" aria-label="긴장도 구성">
           {j.clauses.map((c) => (
-            <li key={c.n}>
-              <span>제{c.n}조 {c.name} <em>{c.detail}</em></span>
-              <b>{c.pts > 0 ? '+' : ''}{c.pts}</b>
-            </li>
+            <span key={c.n} className="art" title={c.detail}>
+              제{c.n}조 {c.name} <b>{c.pts < 0 ? `−${-c.pts}` : `+${c.pts}`}</b>
+            </span>
           ))}
-        </ol>
+        </p>
         {j.specials.length > 0 && (
           <ul className="specials">
             {j.specials.map((s) => <li key={s.n}>특례 {s.n} · {s.name} → {s.effect}</li>)}
           </ul>
         )}
+        {j.condition && <p className="condition">조건: {j.condition}</p>}
+        <p className="permit-foot">※ 조항 숫자는 긴장도 가산값이며 경기 점수가 아닙니다 · 이 신탁은 근거가 없습니다</p>
       </div>
 
       <div className="actions">
         <button className="primary" onClick={() => dispatch({ type: 'go', now: Date.now() })}>다녀온다</button>
-        <button className="secondary" onClick={() => dispatch({ type: 'hold' })}>참는다</button>
+        <button className="outline" onClick={() => dispatch({ type: 'hold' })}>참는다</button>
       </div>
-      <p className="disclaimer">이 신탁은 근거가 없습니다</p>
     </section>
   );
 }
