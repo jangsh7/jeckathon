@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import * as L from '../logic.js';
+import ErrorScreen, { toHome } from './ErrorScreen.jsx';
 import { duration } from '../format.js';
 import TopBar, { backFromResult } from './TopBar.jsx';
 
@@ -26,7 +27,7 @@ export default function Result({ state, dispatch }) {
 
   const log = state.todayLog;
   const e = log[log.length - 1];
-  if (!e) return null;
+  if (!e) return <ErrorScreen view={state.view} onHome={() => dispatch({ type: 'load', state: toHome(state) })} />;
   const went = e.action === 'went';
   const s = L.stats(log);
   const rate = s.hitRate === null ? '—' : `${Math.round(s.hitRate * 100)}%`; // POL-MET-04

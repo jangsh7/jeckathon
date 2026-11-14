@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import * as L from '../logic.js';
+import ErrorScreen, { toHome } from './ErrorScreen.jsx';
 import TopBar, { backFromRecord } from './TopBar.jsx';
 
 const CHIPS = [
@@ -15,7 +16,7 @@ export default function Record({ state, dispatch }) {
   const locked = useRef(false);
 
   const pending = state.pending;
-  if (!pending) return null;
+  if (!pending) return <ErrorScreen view={state.view} onHome={() => dispatch({ type: 'load', state: toHome(state) })} />;
   const went = pending.action === 'went';
 
   // POL-S3-06·POL-DICE-01: 행동 버튼 시점 스냅샷의 긴장도를 쓴다 (스냅샷이 없으면 현재 전광판으로 계산)
