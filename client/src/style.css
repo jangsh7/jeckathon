@@ -81,7 +81,7 @@ body[data-view="home"] { background: #fff; color-scheme: light; }
 .s1.v-cond { --v-bg: #f7eed8; --v-ink: #85652e; --v-btn: #85652e; }
 .s1.v-no { --v-bg: #fde0e0; --v-ink: #c62828; --v-btn: #a80d0d; }
 
-.s1 button { color: inherit; }
+.s1 button { color: inherit; padding: 0; } /* 브라우저 기본 좌우 여백 때문에 내부 상자가 치우치는 것 방지 */
 
 /* 상단 바 */
 .s1-bar {
@@ -118,21 +118,22 @@ body[data-view="home"] { background: #fff; color-scheme: light; }
   background: var(--card); border: 1px solid #ececec; border-radius: 16px;
   padding: 14px 12px 14px 14px;
 }
-.s1-scores { display: flex; justify-content: center; gap: 16px; }
-.s1-score { display: flex; align-items: center; gap: 6px; }
-.s1-score-ctl { display: flex; align-items: center; gap: 4px; }
+.s1-scores { display: flex; justify-content: center; gap: 36px; }
+.s1-score { display: flex; align-items: center; gap: 8px; }
+/* − [점수] + : 가운데 칸 고정 폭이라 점수가 항상 두 버튼 정중앙 */
+.s1-score-ctl { display: grid; grid-template-columns: 36px 34px 36px; align-items: center; justify-items: center; }
 .s1-team { font-weight: 800; font-size: 17px; }
-.s1-num { min-width: 26px; text-align: center; font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.s1-num { width: 100%; text-align: center; font-size: 22px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
 
 /* 점수 −/+ : 보이는 크기 36px, 탭 영역 46px */
 .s1-step.score { width: 36px; height: 36px; }
 .s1-step.score::after { inset: -5px; }
 .s1-step.score span { width: 36px; height: 36px; border-radius: 8px; font-size: 22px; background: #e3e3e3; }
 
-/* 좁은 폰: 팀 이름을 버튼 위로 */
-@media (max-width: 389px) {
-  .s1-scores { justify-content: space-around; gap: 8px; }
-  .s1-score { flex-direction: column; gap: 2px; }
+/* 한 줄에 간격까지 들어가지 않는 폭: 팀 이름을 버튼 위로 */
+@media (max-width: 429px) {
+  .s1-scores { justify-content: space-around; gap: 12px; }
+  .s1-score { flex-direction: column; gap: 4px; }
   .s1-team { font-size: 15px; }
 }
 
@@ -146,17 +147,18 @@ body[data-view="home"] { background: #fff; color-scheme: light; }
 .s1-lamp.strike.on i { background: #f2c200; }
 .s1-lamp.out.on i { background: #e5484d; }
 
-.s1-field { position: relative; flex: 1; max-width: 220px; aspect-ratio: 200 / 160; }
+.s1-field { position: relative; flex: 1; max-width: 240px; aspect-ratio: 200 / 160; }
 .s1-field svg { display: block; width: 100%; height: 100%; }
 .s1-base {
-  position: absolute; width: 44px; height: 44px; transform: translate(-50%, -50%);
+  position: absolute; width: 48px; height: 48px; transform: translate(-50%, -50%);
   display: grid; place-items: center;
 }
 .s1-base i {
-  width: 14px; height: 14px; background: #fff; transform: rotate(45deg);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, .15); transition: all .12s;
+  width: 24px; height: 24px; background: #fff; border-radius: 3px; transform: rotate(45deg);
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, .25), 0 2px 4px rgba(0, 0, 0, .25); transition: background .12s, box-shadow .12s;
 }
-.s1-base.on i { width: 18px; height: 18px; background: #ffd400; box-shadow: 0 0 0 2px #111, 0 0 10px rgba(255, 212, 0, .9); }
+.s1-base:active i { transform: rotate(45deg) scale(.9); }
+.s1-base.on i { background: #ffd400; box-shadow: 0 0 0 2.5px #111, 0 0 12px rgba(255, 212, 0, .9); }
 
 /* 급한 정도 탭 */
 .s1-urgency { margin-top: 22px; }

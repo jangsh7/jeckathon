@@ -50,10 +50,11 @@ function ScoreGroup({ name, value, onMinus, onPlus }) {
 }
 
 // 야구장 그림(장식) + 1·2·3루 탭 버튼. 좌표는 viewBox(200×160) 기준.
+// 베이스 탭 영역(48px)이 서로 겹치지 않도록 베이스를 바깥쪽에 둔다
 const BASES = [
-  { n: 1, x: 152, y: 84 },
-  { n: 2, x: 100, y: 34 },
-  { n: 3, x: 48, y: 84 },
+  { n: 1, x: 162, y: 84 },
+  { n: 2, x: 100, y: 26 },
+  { n: 3, x: 38, y: 84 },
 ];
 
 function Field({ runners, onToggle }) {
@@ -61,22 +62,13 @@ function Field({ runners, onToggle }) {
     <div className="s1-field">
       <svg viewBox="0 0 200 160" aria-hidden="true">
         <rect width="200" height="160" fill="#6aa84f" />
-        <line x1="100" y1="136" x2="0" y2="36" stroke="#cfe3c2" strokeWidth="1.2" />
-        <line x1="100" y1="136" x2="200" y2="36" stroke="#cfe3c2" strokeWidth="1.2" />
-        <path d="M30 84 A70 70 0 0 1 170 84 L100 150 Z" fill="#e3a46f" />
-        <polygon points="100,46 140,86 100,126 60,86" fill="#6aa84f" />
-        <polygon points="100,34 152,84 100,136 48,84" fill="none" stroke="#f6efe6" strokeWidth="1.5" />
-        <circle cx="100" cy="88" r="9" fill="#e3a46f" />
-        {[
-          ['1', 100, 88], ['2', 100, 152], ['3', 162, 66], ['4', 128, 44],
-          ['5', 38, 66], ['6', 72, 44], ['D', 52, 142],
-        ].map(([t, x, y]) => (
-          <g key={t}>
-            <rect x={x - 6} y={y - 6} width="12" height="12" rx="1.5" fill="#3b3b3b" />
-            <text x={x} y={y + 3.5} textAnchor="middle" fontSize="9" fill="#fff" fontFamily="system-ui, sans-serif">{t}</text>
-          </g>
-        ))}
-        <path d="M94 136 L106 136 L106 141 L100 146 L94 141 Z" fill="#fff" />
+        <line x1="100" y1="142" x2="0" y2="42" stroke="#cfe3c2" strokeWidth="1.2" />
+        <line x1="100" y1="142" x2="200" y2="42" stroke="#cfe3c2" strokeWidth="1.2" />
+        <path d="M22 84 A78 78 0 0 1 178 84 L100 158 Z" fill="#e3a46f" />
+        <polygon points="100,42 146,86 100,128 54,86" fill="#6aa84f" />
+        <polygon points="100,26 162,84 100,142 38,84" fill="none" stroke="#f6efe6" strokeWidth="1.5" />
+        <circle cx="100" cy="86" r="8" fill="#e3a46f" />
+        <path d="M93 138 L107 138 L107 143 L100 149 L93 143 Z" fill="#fff" />
       </svg>
       {BASES.map(({ n, x, y }) => (
         <button
